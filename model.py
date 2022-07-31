@@ -37,6 +37,7 @@ class DeepFold(nn.Module):
         # [batch_size, 400]
         x = torch.mean(x, dim= 2)
 
+        # L2 norm 计算范数
         normValue = torch.norm(x, dim = 1) # norm_value [batch_size]
         # print(normValue.shape)
         # [400, batch_size]  最后一维要和norm_value维度匹配
