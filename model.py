@@ -3,13 +3,14 @@ import torch.nn as nn
 kernel_List = [12, 4, 4, 4, 4, 4]
 channel_List = [128, 256, 512, 512, 512, 400]
 
-class ConvBlock(nn.Module):
+class ConvBlock(nn.Module):   
     def __init__(self, in_channel, out_channel, kernel_sz, padding, stride = 2) -> None:
         super().__init__()
         self.conv = nn.Conv2d(in_channel, out_channel, kernel_sz, stride, padding)
         self.bn = nn.BatchNorm2d(out_channel)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout()
+
     def forward(self, x):
         x = self.relu(self.bn(self.conv(x)))
         x = self.dropout(x)
