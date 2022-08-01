@@ -73,5 +73,5 @@ for epoch in range(st_epoch, total_epochs):
                     nega_vec_list.append(fingerpvec2[number_inbatch])
                 elif label[number_inbatch] == 1:
                     posi_vec_list.append(fingerpvec2[number_inbatch])
-                else :
+                else:
                     print("ERROR")
