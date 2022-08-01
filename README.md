@@ -34,10 +34,10 @@ reference：
 ├─distance_matrix
 │  ├─distance_matrix_inf
 │  ├─distance_matrix_mine
-│  └─distance_matrix_parser
+│  └─distance_matrix_modified
 ├─distance_matrix_r
 │  ├─distance_matrix_mine_r
-│  └─distance_matrix_parser_r
+│  └─distance_matrix_modified_r
 ├─pair
 │  ├─pair_bool
 │  └─pair_score
