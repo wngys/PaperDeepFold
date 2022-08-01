@@ -5,29 +5,32 @@ import numpy as np
 
 # 数据预处理transform
 #-----------------------------------------------------
-def funcy(x: torch.tensor, k:int):
-    return x**(-2*k)
+#此代码块作为数据处理内容，则transform不包含此内容
+# def funcy(x: torch.tensor, k:int):
+#     return x**(-2*k)
 
-class Pretfm(torch.nn.Module):
-    def __init__(self, in_channel) -> None:
-        super().__init__()
-        self.in_channel = in_channel
+# class Pretfm(torch.nn.Module):
+#     def __init__(self, in_channel) -> None:
+#         super().__init__()
+#         self.in_channel = in_channel
 
-    def forward(self, x: torch.tensor):
+#     def forward(self, x: torch.tensor):
 
-        y = torch.rand(self.in_channel, 256, 256)
+#         y = torch.rand(self.in_channel, 256, 256)
 
-        for i in range(1, self.in_channel+1):
-            y[i-1] = funcy(x, i)
-        return y
+#         for i in range(1, self.in_channel+1):
+#             y[i-1] = funcy(x, i)
+#         return y
+#------------------------------------------------------
 
+# 原数据应是取逆扩充channel后的距离矩阵，而且inf项被替换
 in_channel = 3
 
 train_tfm = T.Compose(
     [
         T.Resize((256, 256)),
         # 取逆矩阵 扩充channel
-        Pretfm(in_channel),
+        # Pretfm(in_channel),
         #是否需要数据增强 保留一个问号
         # 层归一化
         nn.LayerNorm((in_channel, 256, 256))
@@ -38,18 +41,24 @@ train_tfm = T.Compose(
 # 构建数据集
 #-----------------------------------------------------
 class Train_set(torch.utils.data.Dataset):
-    def __init__(self, id_list, tfm) -> None:
+
+    def __init__(self, dir, id_list, tfm) -> None:
         super().__init__()
         self.tensor_list = []
-        for id in id_list:
+        for id, label in id_list:
             # 在蛋白质数据库文件查找 id.npy
-            self.tensor_list.append(torch.from_numpy(np.load(dir+id+".npy", allow_pickle=True)))
+            feature = torch.from_numpy(np.load(dir+id+".npy", allow_pickle=True))
+            feature = torch.unsqueeze(feature, 0)
+            self.tensor_list.append((feature,
+                                        label)
+                                        )
         self.tfm = tfm
 
     def __getitem__(self, idx :int):
-        y = self.tensor_list[idx]
+        y = self.tensor_list[idx][0]
         y = self.tfm(y)
-        return y
+        label = self.tensor_list[idx][1]
+        return y, label
 
     def __len__(self):
         return len(self.tensor_list)
