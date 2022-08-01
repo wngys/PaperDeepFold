@@ -24,18 +24,18 @@ import numpy as np
 #------------------------------------------------------
 
 # 原数据应是取逆扩充channel后的距离矩阵，而且inf项被替换
-in_channel = 3
-
-train_tfm = T.Compose(
-    [
-        T.Resize((256, 256)),
-        # 取逆矩阵 扩充channel
-        # Pretfm(in_channel),
-        #是否需要数据增强 保留一个问号
-        # 层归一化
-        nn.LayerNorm((in_channel, 256, 256))
-    ]
-)
+def build_transform(in_channel):
+    train_tfm = T.Compose(
+        [
+            T.Resize((256, 256)),
+            # 取逆矩阵 扩充channel
+            # Pretfm(in_channel),
+            #是否需要数据增强 保留一个问号
+            # 层归一化
+            nn.LayerNorm((in_channel, 256, 256))
+        ]
+    )
+    return train_tfm
 #-----------------------------------------------------
 
 # 构建数据集

@@ -1,0 +1,20 @@
+--2022-06-14 23:31:41--  https://github.com/virginiakm1988/ML2022-Spring/blob/main/HW03/food11.zip?raw=true
+Resolving github.com (github.com)... 20.205.243.166
+Connecting to github.com (github.com)|20.205.243.166|:443... connected.
+HTTP request sent, awaiting response... 302 Found
+Location: https://github.com/virginiakm1988/ML2022-Spring/raw/main/HW03/food11.zip [following]
+--2022-06-14 23:31:42--  https://github.com/virginiakm1988/ML2022-Spring/raw/main/HW03/food11.zip
+Reusing existing connection to github.com:443.
+HTTP request sent, awaiting response... 302 Found
+Location: https://raw.githubusercontent.com/virginiakm1988/ML2022-Spring/main/HW03/food11.zip [following]
+--2022-06-14 23:31:42--  https://raw.githubusercontent.com/virginiakm1988/ML2022-Spring/main/HW03/food11.zip
+Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.109.133, 185.199.108.133, 185.199.111.133, ...
+Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|185.199.109.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 135 [application/zip]
+Saving to: ‘food11.zip’
+
+     0K                                                       100% 4.87M=0s
+
+2022-06-14 23:36:28 (4.87 MB/s) - ‘food11.zip’ saved [135/135]
+
