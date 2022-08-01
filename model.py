@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 kernel_List = [12, 4, 4, 4, 4, 4]
 channel_List = [128, 256, 512, 512, 512, 400]
 
@@ -38,14 +39,16 @@ class DeepFold(nn.Module):
         # [batch_size, 400]
         x = torch.mean(x, dim= 2)
 
-        # L2 norm 计算范数
-        normValue = torch.norm(x, dim = 1) # norm_value [batch_size]
-        # print(normValue.shape)
-        # [400, batch_size]  最后一维要和norm_value维度匹配
-        x = x.reshape(x.shape[-1], -1)
-        # [400, batch_size] 已经正则化
-        x = torch.div(x, normValue)
+        x = F.normalize(x)
+
+        # # L2 norm 计算范数
+        # normValue = torch.norm(x, dim = 1) # norm_value [batch_size]
+        # # print(normValue.shape)
+        # # [400, batch_size]  最后一维要和norm_value维度匹配
+        # x = x.reshape(x.shape[-1], -1)
+        # # [400, batch_size] 已经正则化
+        # x = torch.div(x, normValue)
 
         # [batch_size, 400]
-        x = x.view(x.shape[-1], -1)
+        # x = x.view(x.shape[-1], -1)
         return x
