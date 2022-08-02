@@ -29,7 +29,7 @@ reference：
 
 ## 服务器上的文件路径
 
-/homegys/lab/DeepFold/
+/home/wngys/lab/DeepFold/
 ├─Code (PaperDeepFold)
 ├─distance_matrix
 │  ├─distance_matrix_inf
