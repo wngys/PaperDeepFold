@@ -32,7 +32,7 @@ def build_transform(in_channel):
             # Pretfm(in_channel),
             #是否需要数据增强 保留一个问号
             # 层归一化
-            nn.LayerNorm((in_channel, 256, 256))
+            # nn.LayerNorm((in_channel, 256, 256))
         ]
     )
     return train_tfm
@@ -49,6 +49,7 @@ class Train_set(torch.utils.data.Dataset):
             # 在蛋白质数据库文件查找 id.npy
             feature = torch.from_numpy(np.load(dir+id+".npy", allow_pickle=True))
             feature = torch.unsqueeze(feature, 0)
+            label = float(label)
             self.tensor_list.append((feature,
                                         label)
                                         )
@@ -56,9 +57,33 @@ class Train_set(torch.utils.data.Dataset):
 
     def __getitem__(self, idx :int):
         y = self.tensor_list[idx][0]
+        y = y.to(torch.float)
         y = self.tfm(y)
-        label = self.tensor_list[idx][1]
+        label = torch.tensor(self.tensor_list[idx][1], dtype=torch.float32)
         return y, label
 
     def __len__(self):
         return len(self.tensor_list)
+
+#-----------------------------------------------------
+class LeftTrainSet(torch.utils.data.Dataset):
+
+    def __init__(self, dir, train_list, tfm) -> None:
+        super().__init__()
+        self.tensorList = []
+        for leftID in train_list:
+            feature = torch.from_numpy(np.load(dir+id+".npy", allow_pickle=True))
+            feature = torch.unsqueeze(feature, 0)
+            self.tensorList.append((leftID, feature))
+        self.tfm = tfm
+
+    def __getitem__(self, idx):
+        y = self.tensorList[idx][1]
+        y = y.to(torch.float)
+        y = self.tfm(y)
+        ID = self.tensorList[idx][0]
+        return ID, y
+
+    def __len__(self):
+        return len(self.tensorList)
+
