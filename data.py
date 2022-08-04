@@ -48,7 +48,7 @@ class Train_set(torch.utils.data.Dataset):
         for id, label in id_list:
             # 在蛋白质数据库文件查找 id.npy
             feature = torch.from_numpy(np.load(dir+id+".npy", allow_pickle=True))
-            feature = torch.unsqueeze(feature, 0)
+            # feature = torch.unsqueeze(feature, 0)
             label = float(label)
             self.tensor_list.append((feature,
                                         label)
@@ -72,8 +72,8 @@ class LeftTrainSet(torch.utils.data.Dataset):
         super().__init__()
         self.tensorList = []
         for leftID in train_list:
-            feature = torch.from_numpy(np.load(dir+id+".npy", allow_pickle=True))
-            feature = torch.unsqueeze(feature, 0)
+            feature = torch.from_numpy(np.load(dir+leftID+".npy", allow_pickle=True))
+            # feature = torch.unsqueeze(feature, 0)
             self.tensorList.append((leftID, feature))
         self.tfm = tfm
 

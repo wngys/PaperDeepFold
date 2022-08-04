@@ -79,6 +79,9 @@ for id in theSelecTrainList:
                         f_w.write(data)
                 else:
                     # data_list.extend(nega_data[nega_cusor:])
+                    k = 0
+                    # while(k <= 10):
+                        # k += len(nega_data[nega_cusor:])
                     for data in nega_data[nega_cusor:]:
                         f_w.write(data)
 
