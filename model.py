@@ -38,9 +38,8 @@ class DeepFold(nn.Module):
         x = torch.diagonal(x, dim1=2, dim2=3)
         # [batch_size, 400]
         x = torch.mean(x, dim= 2)
-
         x = F.normalize(x)
-
+        return x
         # # L2 norm 计算范数
         # normValue = torch.norm(x, dim = 1) # norm_value [batch_size]
         # # print(normValue.shape)
@@ -51,4 +50,4 @@ class DeepFold(nn.Module):
 
         # [batch_size, 400]
         # x = x.view(x.shape[-1], -1)
-        return x
+        

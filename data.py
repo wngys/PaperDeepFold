@@ -32,7 +32,8 @@ def build_transform(in_channel):
             # Pretfm(in_channel),
             #是否需要数据增强 保留一个问号
             # 层归一化
-            # nn.LayerNorm((in_channel, 256, 256))
+            # nn.LayerNorm((in_channel, 256, 256)) # 不能经过LayNorm等网络层，不然输出数据 requires_grad = True,从而报错，原始数据应该为False
+            T.Normalize(mean=[0.0068, 0.0003, 2.3069e-05], std=[0.0140, 0.0015, 0.0002])
         ]
     )
     return train_tfm
@@ -42,12 +43,13 @@ def build_transform(in_channel):
 #-----------------------------------------------------
 class Train_set(torch.utils.data.Dataset):
 
-    def __init__(self, dir, id_list, tfm) -> None:
+    def __init__(self, dict_data, id_list, tfm) -> None:
         super().__init__()
         self.tensor_list = []
         for id, label in id_list:
             # 在蛋白质数据库文件查找 id.npy
-            feature = torch.from_numpy(np.load(dir+id+".npy", allow_pickle=True))
+            # feature = torch.from_numpy(np.load(dir+id+".npy", allow_pickle=True))
+            feature = torch.from_numpy(dict_data[id])
             # feature = torch.unsqueeze(feature, 0)
             label = float(label)
             self.tensor_list.append((feature,
