@@ -60,15 +60,28 @@ class Max_margin_loss(nn.Module):
         for nega_vec in nega_vec_list:
             nega_cos_smi_list.append(F.cosine_similarity(fingerpvec1, nega_vec, dim = 0))
 
-        # posi_cos_smi_list.sort() # 升序排序 选最小
-        # nega_cos_smi_list.sort(reverse=True) # 降序排序 选最大
+        posi_cos_smi_list.sort() # 升序排序 选最小
+        nega_cos_smi_list.sort(reverse=True) # 降序排序 选最大
         # posi_cos = posi_cos_smi_list[0] # 只选取一个正例
+        # loss = 0
+        # for i in range(self.K):
+        #     nega_cos = nega_cos_smi_list[i]
+        #     loss += max(0, nega_cos - posi_cos + self.m)
+
+
+        # loss = 0
+        # for posi_cos in posi_cos_smi_list[:1]:
+        #     for nega_cos in nega_cos_smi_list[:self.K]:
+        #         # if nega_cos - posi_cos + self.m < 0:
+        #         #     print("loss_toadd: ", nega_cos - posi_cos + self.m)
+        #         # if nega_cos - posi_cos + self.m >= 0:
+        #         loss += max(0, nega_cos - posi_cos + self.m)
+
         loss = 0
         for posi_cos in posi_cos_smi_list:
             for nega_cos in nega_cos_smi_list:
-                if nega_cos - posi_cos + self.m < 0:
-                    print("loss_toadd: ", nega_cos - posi_cos + self.m)
                 loss += max(0, nega_cos - posi_cos + self.m)
+        print(loss)
         return loss
 
 def valid_data(best_acc, valid_acc_ls, dict_data, validIDlist, DFold_model, train_tfm, batch_size, device, epoch, K=5):
@@ -84,27 +97,27 @@ def valid_data(best_acc, valid_acc_ls, dict_data, validIDlist, DFold_model, trai
         train_ds = Train_set(dict_data, id_list, train_tfm)
         train_dl = DataLoader(train_ds, batch_size, shuffle=True, num_workers=2, pin_memory=True)
 
+        with torch.no_grad():
+            fingerpvec1 = DFold_model(feature1)
+
         topKList = []
         for feature2, label in train_dl:
-            with torch.no_grad():
-                fingerpvec1 = DFold_model(feature1)
             feature2 = feature2.to(device)
             label = label.to(device)
-            fingerBatch = fingerpvec1
-            for b_i in range(feature2.shape[0] - 1):
-                fingerBatch = torch.cat((fingerBatch,fingerpvec1), dim = 0)
             with torch.no_grad():
                 fingerpvec2 = DFold_model(feature2)
+            cos_smi_list = []
+            for i in range(fingerpvec2.shape[0]):
+                cos_smi_list.append(F.cosine_similarity(fingerpvec1, fingerpvec2[i], dim=-1))
 
-            cos_smi_batch = F.cosine_similarity(fingerBatch, fingerpvec2, dim=-1)
-            for cos_smi_idx in range(cos_smi_batch.shape[0]):
+            for cos_smi_idx, cos_smi in enumerate(cos_smi_list):
                 if(len(topKList) < K):
-                    topKList.append((cos_smi_batch[cos_smi_idx], label[cos_smi_idx]))
+                    topKList.append((cos_smi, label[cos_smi_idx]))
                 else:
                     min_value = min(topKList)
-                    if (cos_smi_batch[cos_smi_idx], label[cos_smi_idx]) > min_value:
+                    if (cos_smi, label[cos_smi_idx]) > min_value:
                         min_idx = topKList.index(min_value)
-                        topKList[min_idx] = (cos_smi_batch[cos_smi_idx], label[cos_smi_idx])
+                        topKList[min_idx] = (cos_smi, label[cos_smi_idx])
         acc_flag = False
         for _, label in topKList:
             if label == 1:
@@ -118,7 +131,7 @@ def valid_data(best_acc, valid_acc_ls, dict_data, validIDlist, DFold_model, trai
     if best_acc >= 0: # 验证集
         if acc > best_acc:
             best_acc = acc
-            torch.save(DFold_model.state_dict(), "/home/wngys/lab/DeepFold/model/best_model.pt")
+            torch.save(DFold_model.state_dict(), "/home/wngys/lab/DeepFold/model/model_oneC/best_model.pt")
             print(f"saving best model with acc: {best_acc:.4f}")    
     DFold_model.train()
     return best_acc
@@ -128,15 +141,15 @@ def valid_data(best_acc, valid_acc_ls, dict_data, validIDlist, DFold_model, trai
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-DFold_model = DeepFold(in_channel = 3)
+DFold_model = DeepFold(in_channel = 1)
 # DFold_model.to(device)
 DFold_model = nn.DataParallel(DFold_model, device_ids).to(device)
 
-train_tfm = build_transform(in_channel = 3)
-optimizer = torch.optim.SGD(DFold_model.parameters(), lr = 1e-2)
-lossF = Max_margin_loss(K = 10, m = 0.1)
+train_tfm = build_transform()
+optimizer = torch.optim.SGD(DFold_model.parameters(), lr = 1e-3, momentum=0.9)
+lossF = Max_margin_loss(K = 10, m = 2)
 
-total_epochs = 10
+total_epochs = 20
 batch_size = 64
 
 train_loss_ls = []
@@ -147,17 +160,17 @@ pair_dir = "/home/wngys/lab/DeepFold/pair/train_pair_bool_90/"
 # valid_pair_dir = "/home/wngys/lab/DeepFold/pair/pair_bool_90/"
 
 trainIDlist = np.load("/home/wngys/lab/DeepFold/pair/train.npy", allow_pickle=True)
-random.shuffle(trainIDlist)
+# random.shuffle(trainIDlist)
 trainIDlist = trainIDlist[:400]
 validIDlist = np.load("/home/wngys/lab/DeepFold/pair/valid.npy", allow_pickle=True)
 random.shuffle(validIDlist)
 validIDlist = validIDlist[:100]
 
-dict_data = np.load("/home/wngys/lab/DeepFold/distance_matrix_r/matrix_data.npy", allow_pickle=True).tolist()
-resume_dir = None
-# resume_dir = ""
+dict_data = np.load("/home/wngys/lab/DeepFold/distance_matrix_r/matrix_data_1.npy", allow_pickle=True).tolist()
+# resume_dir = None
+resume_dir = "/home/wngys/lab/DeepFold/model/model_oneC/model_12.pt"
 if resume_dir is not None:
-    chkp = torch.load("/home/wngys/lab/DeepFold/model/model_5.pt")
+    chkp = torch.load(resume_dir)
     st_epoch = chkp["epoch"]
     best_acc = chkp["best_acc"]
     train_loss_ls.extend(chkp["train_loss_ls"])
@@ -222,7 +235,7 @@ for epoch in range(st_epoch, total_epochs):
         "train_acc_ls": train_acc_ls,
         "valid_id_list": validIDlist
     }
-    torch.save(chkp, "/home/wngys/lab/DeepFold/model/model_10_400_100/" + f"model_{epoch}.pt")
+    torch.save(chkp, "/home/wngys/lab/DeepFold/model/model_oneC/" + f"model_{epoch}.pt")
         
 
             

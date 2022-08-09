@@ -24,7 +24,7 @@ import numpy as np
 #------------------------------------------------------
 
 # 原数据应是取逆扩充channel后的距离矩阵，而且inf项被替换
-def build_transform(in_channel):
+def build_transform():
     train_tfm = T.Compose(
         [
             T.Resize((256, 256)),
@@ -33,7 +33,8 @@ def build_transform(in_channel):
             #是否需要数据增强 保留一个问号
             # 层归一化
             # nn.LayerNorm((in_channel, 256, 256)) # 不能经过LayNorm等网络层，不然输出数据 requires_grad = True,从而报错，原始数据应该为False
-            T.Normalize(mean=[0.0068, 0.0003, 2.3069e-05], std=[0.0140, 0.0015, 0.0002])
+            # T.Normalize(mean=[0.0068, 0.0003, 2.3069e-05], std=[0.0140, 0.0015, 0.0002])
+            T.Normalize(mean=[0.0660], std=[0.0467])
         ]
     )
     return train_tfm
