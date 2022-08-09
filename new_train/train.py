@@ -19,12 +19,13 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0, 5, 6, 7"
 device_ids = [0, 1, 2, 3]
 
 # --------------------------------------------------------------------------------------------- #
-
+# 初始化模型
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DFold_model = DeepFold(in_channel = 1)
 DFold_model = nn.DataParallel(DFold_model, device_ids).to(device)
 
 # --------------------------------------------------------------------------------------------- #
+# 自定义Dataset：加载蛋白质id、距离矩阵、标签
 class MatrixLabelDataset(Dataset):
     def __init__(self, protein_id, pair_dir, matrix_dir, transform=None):
         self.protein_id = protein_id
@@ -58,6 +59,7 @@ class MatrixLabelDataset(Dataset):
         return id_label_list
 
 # --------------------------------------------------------------------------------------------- #
+# 计算loss
 def MaxMarginLoss(vectors):
     query_vector = vectors[:1]
     pos_vectors = vectors[1:7]
@@ -81,6 +83,7 @@ def by_simi(t):
     return t[2]
 
 # --------------------------------------------------------------------------------------------- #
+# 模型在训练过程中，测试在验证集上的准确率acc
 def ModelOnValidSet():
     DFold_model.eval()
     K = 10
@@ -126,6 +129,7 @@ def ModelOnValidSet():
     return (acc, cntShot, len(validIDlist))
 
 # --------------------------------------------------------------------------------------------- #
+# 模型在训练过程中，测试在训练集上的准确率acc
 def ModelOnTrainSet():
     DFold_model.eval()
     K = 10

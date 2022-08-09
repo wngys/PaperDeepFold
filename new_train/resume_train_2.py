@@ -15,7 +15,7 @@ import os
 # --------------------------------------------------------------------------------------------- #
 # 设置显卡
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0, 5, 6, 7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1, 2, 3, 4"
 device_ids = [0, 1, 2, 3]
 
 chkp = torch.load("/home/wngys/lab/DeepFold/new_model/new_model/model_2.pt")
@@ -25,7 +25,8 @@ DFold_model = DeepFold(in_channel = 1)
 DFold_model = nn.DataParallel(DFold_model, device_ids).to(device)
 DFold_model.load_state_dict(chkp["model_param"])
 
-optimizer = torch.optim.SGD(DFold_model.parameters(), lr = 1e-3, momentum=0.9)
+optimizer = torch.optim.SGD(DFold_model.parameters(), lr = 1e-2, momentum=0.9)
+optimizer.load_state_dict(chkp['optim_param'])
 
 # --------------------------------------------------------------------------------------------- #
 # 自定义Dataset：加载蛋白质id、距离矩阵、标签
@@ -196,6 +197,8 @@ transform = T.Compose([
     T.Resize((256, 256)),
     T.Normalize(mean=[0.0660], std=[0.0467])
 ])
+# optimizer = torch.optim.SGD(DFold_model.parameters(), lr = 1e-3, momentum=0.9)
+
 
 train_acc_list = chkp['train_acc']
 valid_acc_list = chkp['valid_acc']
@@ -232,4 +235,4 @@ for epoch in range(START_EPOCH, EPOCH):
         "valid_acc": valid_acc_list,
         "valid_id_list": validIDlist
     }
-    torch.save(chkp, "/home/wngys/lab/DeepFold/new_model/new_model/" + f"model_{epoch}.pt")
+    torch.save(chkp, "/home/wngys/lab/DeepFold/new_model/new_model_2/" + f"model_{epoch}.pt")
