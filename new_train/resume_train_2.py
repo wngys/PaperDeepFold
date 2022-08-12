@@ -18,7 +18,7 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1, 2, 3, 4"
 device_ids = [0, 1, 2, 3]
 
-chkp = torch.load("/home/wngys/lab/DeepFold/new_model/new_model/model_2.pt")
+chkp = torch.load("/home/wngys/lab/DeepFold/new_model/new_model_2/model_9.pt")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DFold_model = DeepFold(in_channel = 1)
@@ -179,13 +179,13 @@ def ModelOnTrainSet():
     return (acc, cntShot, len(trainIDlist[:100]))
 
 # --------------------------------------------------------------------------------------------- #
-START_EPOCH = 3
-EPOCH = 10
+START_EPOCH = 10
+EPOCH = 20
 BATCH_SIZE = 64
 
 trainIDlist = np.load("/home/wngys/lab/DeepFold/pair/train.npy", allow_pickle=True)
 random.shuffle(trainIDlist)
-trainIDlist = trainIDlist[:1000]
+trainIDlist = trainIDlist[:2000]
 # validIDlist = np.load("/home/wngys/lab/DeepFold/pair/valid.npy", allow_pickle=True)
 # random.shuffle(validIDlist)
 # validIDlist = validIDlist[:100]
@@ -202,6 +202,7 @@ transform = T.Compose([
 
 train_acc_list = chkp['train_acc']
 valid_acc_list = chkp['valid_acc']
+best_acc = 0
 
 for epoch in range(START_EPOCH, EPOCH):
     for idx, protein_id in enumerate(trainIDlist):
@@ -226,11 +227,16 @@ for epoch in range(START_EPOCH, EPOCH):
             valid_t = ModelOnValidSet()
             train_acc_list.append(train_t)
             valid_acc_list.append(valid_t)
+            if valid_t[0] > best_acc:
+                torch.save(DFold_model.state_dict(), "/home/wngys/lab/DeepFold/new_model/new_model_2/best_model.pt")
+                best_acc = valid_t[0]
+                print(f"saving best_model with valid_acc: {best_acc}")
 
     chkp = {
         "epoch": epoch,
         "model_param": DFold_model.state_dict(),
         "optim_param": optimizer.state_dict(),
+        "best_acc": best_acc,
         "train_acc": train_acc_list,
         "valid_acc": valid_acc_list,
         "valid_id_list": validIDlist

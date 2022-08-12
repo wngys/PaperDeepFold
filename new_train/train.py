@@ -15,13 +15,14 @@ import os
 # --------------------------------------------------------------------------------------------- #
 # 设置显卡
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0, 5, 6, 7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3"
 device_ids = [0, 1, 2, 3]
 
 # --------------------------------------------------------------------------------------------- #
 # 初始化模型
+# chkp = torch.load()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-DFold_model = DeepFold(in_channel = 1)
+DFold_model = DeepFold(in_channel = 3)
 DFold_model = nn.DataParallel(DFold_model, device_ids).to(device)
 
 # --------------------------------------------------------------------------------------------- #
@@ -41,7 +42,8 @@ class MatrixLabelDataset(Dataset):
         id = self.id_label_list[idx][0]
         label = self.id_label_list[idx][1]
         matrix_path = self.matrix_dir + id + ".npy"
-        matrix = torch.from_numpy(np.expand_dims(np.load(matrix_path, allow_pickle=True), 0)).to(torch.float)
+        matrix = torch.from_numpy(np.load(matrix_path, allow_pickle=True)).to(torch.float)
+        # matrix = torch.from_numpy(np.expand_dims(np.load(matrix_path, allow_pickle=True), 0)).to(torch.float)
         if self.transform:
             matrix = self.transform(matrix)
         return id, matrix, label
@@ -84,17 +86,14 @@ def by_simi(t):
 
 # --------------------------------------------------------------------------------------------- #
 # 模型在训练过程中，测试在验证集上的准确率acc
-def ModelOnValidSet():
-    DFold_model.eval()
-    K = 10
-    valid_pair_dir = "/home/wngys/lab/DeepFold/pair/pair_bool_90/"
-    valid_matrix_dir = "/home/wngys/lab/DeepFold/distance_matrix_r/distance_matrix_mine_r/"
-    
+def ModelOnValidSet(valid_pair_dir, valid_matrix_dir, K):
+    DFold_model.eval()    
     cntShot = 0
     for idx, protein_id in enumerate(validIDlist):
         # print(protein_id)
         query_matrix_path = valid_matrix_dir + protein_id + ".npy"
-        query_matrix = torch.unsqueeze(torch.from_numpy(np.expand_dims(np.load(query_matrix_path, allow_pickle=True), 0)).to(torch.float), 0)
+        query_matrix = torch.unsqueeze(torch.from_numpy(np.load(query_matrix_path, allow_pickle=True)).to(torch.float), 0)
+        # query_matrix = torch.unsqueeze(torch.from_numpy(np.expand_dims(np.load(query_matrix_path, allow_pickle=True), 0)).to(torch.float), 0)
         query_matrix = transform(query_matrix)
         query_matrix = query_matrix.to(device)
         query_vector = DFold_model(query_matrix)
@@ -130,17 +129,14 @@ def ModelOnValidSet():
 
 # --------------------------------------------------------------------------------------------- #
 # 模型在训练过程中，测试在训练集上的准确率acc
-def ModelOnTrainSet():
-    DFold_model.eval()
-    K = 10
-    train_pair_dir = "/home/wngys/lab/DeepFold/pair/pair_bool_90/"
-    train_matrix_dir = "/home/wngys/lab/DeepFold/distance_matrix_r/distance_matrix_mine_r/"
-    
+def ModelOnTrainSet(train_pair_dir, train_matrix_dir, K):
+    DFold_model.eval()    
     cntShot = 0
     for idx, protein_id in enumerate(trainIDlist[:100]):
         # print(protein_id)
         query_matrix_path = train_matrix_dir + protein_id + ".npy"
-        query_matrix = torch.unsqueeze(torch.from_numpy(np.expand_dims(np.load(query_matrix_path, allow_pickle=True), 0)).to(torch.float), 0)
+        query_matrix = torch.unsqueeze(torch.from_numpy(np.load(query_matrix_path, allow_pickle=True)).to(torch.float), 0)
+        # query_matrix = torch.unsqueeze(torch.from_numpy(np.expand_dims(np.load(query_matrix_path, allow_pickle=True), 0)).to(torch.float), 0)
         query_matrix = transform(query_matrix)
         query_matrix = query_matrix.to(device)
         query_vector = DFold_model(query_matrix)
@@ -175,22 +171,26 @@ def ModelOnTrainSet():
     return (acc, cntShot, len(trainIDlist[:100]))
 
 # --------------------------------------------------------------------------------------------- #
-START_EPOCH = 3
+START_EPOCH = 0
 EPOCH = 10
 BATCH_SIZE = 64
+K = 10
 
 trainIDlist = np.load("/home/wngys/lab/DeepFold/pair/train.npy", allow_pickle=True)
-# random.shuffle(trainIDlist)
+random.shuffle(trainIDlist)
 trainIDlist = trainIDlist[:400]
 validIDlist = np.load("/home/wngys/lab/DeepFold/pair/valid.npy", allow_pickle=True)
 random.shuffle(validIDlist)
 validIDlist = validIDlist[:100]
 
 train_pair_dir = "/home/wngys/lab/DeepFold/pair/new_train_pair_bool_90/"
-train_matrix_dir = "/home/wngys/lab/DeepFold/distance_matrix_r/distance_matrix_mine_r/"
+train_matrix_dir = "/home/wngys/lab/DeepFold/distance_matrix_r/distance_matrix_mine_r_3/"
+valid_pair_dir = "/home/wngys/lab/DeepFold/pair/pair_bool_90/"
+valid_matrix_dir = "/home/wngys/lab/DeepFold/distance_matrix_r/distance_matrix_mine_r_3/"
 transform = T.Compose([
     T.Resize((256, 256)),
-    T.Normalize(mean=[0.0660], std=[0.0467])
+    # T.Normalize(mean=[0.0660], std=[0.0467])
+    T.Normalize(mean=[0.0068, 0.0003, 2.3069e-05], std=[0.0140, 0.0015, 0.0002])
 ])
 optimizer = torch.optim.SGD(DFold_model.parameters(), lr = 1e-2, momentum=0.9)
 
@@ -216,8 +216,8 @@ for epoch in range(START_EPOCH, EPOCH):
             print("Epoch:", epoch, "| idx:", idx, "| id:", protein_id, "| last batch loss:", loss.tolist())
         
         if idx % 200 == 0:
-            train_t = ModelOnTrainSet()
-            valid_t = ModelOnValidSet()
+            train_t = ModelOnTrainSet(train_pair_dir, train_matrix_dir, K)
+            valid_t = ModelOnValidSet(valid_pair_dir, valid_matrix_dir, K)
             train_acc_list.append(train_t)
             valid_acc_list.append(valid_t)
 
@@ -229,4 +229,4 @@ for epoch in range(START_EPOCH, EPOCH):
         "valid_acc": valid_acc_list,
         "valid_id_list": validIDlist
     }
-    torch.save(chkp, "/home/wngys/lab/DeepFold/new_model/new_model/" + f"model_{epoch}.pt")
+    torch.save(chkp, "/home/wngys/lab/DeepFold/new_model/new_model_3/" + f"model_{epoch}.pt")
